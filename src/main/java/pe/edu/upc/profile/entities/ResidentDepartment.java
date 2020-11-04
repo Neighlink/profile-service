@@ -1,24 +1,22 @@
 package pe.edu.upc.profile.entities;
 
-import lombok.Data;
-
 import javax.persistence.*;
 
 @Entity
-@Table(name ="condominiums")
-@Data
-public class Condominium {
+@Table(name = "resident_department")
+public class ResidentDepartment {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
     private Long id;
     @Column(nullable = false)
-    private String name;
+    private Long deparmentId;
     @Column(nullable = false)
-    private String description;
+    private Long condominiumId;
     @Column(nullable = false)
-    private String address;
-    @Column(nullable = false)
-    private Long AdministratorId;
+    private Long buildingId;
     @Column(nullable = false)
     private boolean isDelete;
+    @Column(nullable = false)
+    private Long residentId;
 }

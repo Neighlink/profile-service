@@ -17,10 +17,8 @@ public class Administrator implements Serializable {
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @JoinColumn(name = "userId")
     private User user;
-    //@Column(nullable = false)
-    //private Long userId;
-    @Column(nullable = false)
-    private String password;
     @Column(nullable = false)
     private boolean isBlocked;
+    @Column(nullable = false)
+    private boolean planActivated;
 }

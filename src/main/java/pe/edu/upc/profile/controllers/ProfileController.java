@@ -6,15 +6,14 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pe.edu.upc.profile.entities.*;
-import pe.edu.upc.profile.models.Response;
-import pe.edu.upc.profile.models.ResponseAuth;
-import pe.edu.upc.profile.models.UserAuth;
-import pe.edu.upc.profile.services.AdministratorService;
-import pe.edu.upc.profile.services.CondominiumService;
-import pe.edu.upc.profile.services.ResidentService;
+import pe.edu.upc.profile.models.*;
+import pe.edu.upc.profile.services.*;
 
+import javax.print.attribute.standard.Media;
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -34,6 +33,10 @@ public class ProfileController {
     private ResidentService residentService;
     @Autowired
     private CondominiumService condominiumService;
+    @Autowired
+    private ResidentDepartmentService residentDepartmentService;
+    @Autowired
+    private UserService userService;
 
 
     private final static Logger LOGGER = Logger.getLogger("bitacora.subnivel.Control");
@@ -260,6 +263,138 @@ public class ProfileController {
             }
             return new ResponseEntity<>(response, status);
         } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PostMapping(path = "/condominiums", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> postBuildinfByCondominium(@RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            if (adminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            Condominium condominium = new Condominium();
+            condominium.setAddress(requestCondominium.getAddress());
+            condominium.setName(requestCondominium.getName());
+            condominium.setDescription(requestCondominium.getDescription());
+            condominium.setAdministratorId(Long.valueOf(adminId.get()));
+            Condominium condominiumSaved = condominiumService.save(condominium);
+            okResponse(condominiumSaved);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PutMapping(path = "/condominiums/{condominiumId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> updateDepartmentsByBuilding(@RequestParam("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            if (adminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+
+            Optional<Condominium> condominium = condominiumService.findById(condominiumId);
+            if (condominium.isEmpty()) {
+                notFoundResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            if (!requestCondominium.getAddress().isEmpty())
+                condominium.get().setAddress(requestCondominium.getAddress());
+            if (!requestCondominium.getName().isEmpty())
+                condominium.get().setName(requestCondominium.getName());
+            if (!requestCondominium.getDescription().isEmpty())
+                condominium.get().setDescription(requestCondominium.getDescription());
+            Condominium condominiumSaved = condominiumService.save(condominium.get());
+            okResponse(condominiumSaved);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @DeleteMapping(path = "/condominiums/{condominiumId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> deleteDepartmentsByCondominium(@RequestParam("condominiumId") Long condominiumId, @RequestHeader String Authorization) {
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            if (adminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+
+            Optional<Condominium> condominium = condominiumService.findById(condominiumId);
+            if (condominium.isEmpty()) {
+                notFoundResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            condominium.get().setDelete(true);
+            condominiumService.save(condominium.get());
+            residentDepartmentService.deleteAllByCondominiumId(condominiumId);
+            okResponse(null);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PostMapping(path = "/administrators", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> createAdministrator(@RequestBody RequestUser requestUser) {
+        try {
+            User user = new User();
+            user.setEmail(requestUser.getEmail());
+            user.setBirthDate(requestUser.getBirthDate());
+            user.setGender(requestUser.getGender());
+            user.setPassword(requestUser.getPassword());
+            user.setName(requestUser.getName());
+            user.setLastName(requestUser.getLastName());
+            user.setPhone(requestUser.getPhone());
+            user.setToken(UUID.randomUUID().toString());
+            User userSaved = userService.save(user);
+            Administrator administrator = new Administrator();
+            administrator.setUser(userSaved);
+            administrator.setBlocked(false);
+            administrator.setPlanActivated(true);
+            administratorService.save(administrator);
+            okResponse(null);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PostMapping(path = "/residents}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> createResident(@RequestBody RequestUser requestUser) {
+        try {
+            User user = new User();
+            user.setEmail(requestUser.getEmail());
+            user.setBirthDate(requestUser.getBirthDate());
+            user.setGender(requestUser.getGender());
+            user.setPassword(requestUser.getPassword());
+            user.setName(requestUser.getName());
+            user.setLastName(requestUser.getLastName());
+            user.setPhone(requestUser.getPhone());
+            user.setToken(UUID.randomUUID().toString());
+            User userSaved = userService.save(user);
+            Resident resident = new Resident();
+            resident.setUser(userSaved);
+            resident.setBlocked(false);
+            residentService.save(resident);
+            okResponse(null);
+            return new ResponseEntity<>(response, status);
+        } catch
+        (Exception e) {
             internalServerErrorResponse(e.getMessage());
             return new ResponseEntity<>(response, status);
         }

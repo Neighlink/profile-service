@@ -12,16 +12,10 @@ public class Resident {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    //@Column(nullable = false)
-    //private Long userId;
     @OneToOne(fetch = FetchType.LAZY)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     @JoinColumn(name = "userId")
     private User user;
     @Column(nullable = false)
-    private String password;
-    @Column(nullable = false)
     private boolean isBlocked;
-    @Column(nullable = false)
-    private boolean planActivated;
 }
