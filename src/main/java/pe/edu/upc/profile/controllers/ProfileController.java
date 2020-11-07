@@ -69,6 +69,7 @@ public class ProfileController {
 
     @PostMapping(path = "/authToken", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> authToken(@RequestHeader String Authorization) {
+        response = new Response();
         ResponseAuth responseAuth = new ResponseAuth();
         response = new Response();
         try {
@@ -99,6 +100,7 @@ public class ProfileController {
 
     @PostMapping(path = "/administrators/auth", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> authAdministrator(@RequestBody UserAuth auth) {
+        response = new Response();
         try {
             Optional<Administrator> administrator = administratorService.auth(auth.getEmail(), auth.getPassword());
             if (administrator.isEmpty()) {
@@ -115,6 +117,7 @@ public class ProfileController {
 
     @PostMapping(path = "/residents/auth", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> authResident(@RequestBody UserAuth auth) {
+        response = new Response();
         try {
             Optional<Resident> resident = residentService.auth(auth.getEmail(), auth.getPassword());
             if (resident.isEmpty()) {
@@ -131,6 +134,7 @@ public class ProfileController {
 
     @GetMapping(path = "/residents/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> geResidentProfile(@PathVariable("id") Long id, @RequestHeader String Authorization) {
+        response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
             Optional<Integer> residentId = residentService.authToken(Authorization);
@@ -157,6 +161,7 @@ public class ProfileController {
 
     @GetMapping(path = "/administrators/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getAdministratorProfile(@PathVariable("id") Long id, @RequestHeader String Authorization) {
+        response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
             if (adminId.isEmpty()) {
@@ -182,12 +187,18 @@ public class ProfileController {
 
     @GetMapping(path = "/administrators/{id}/planMembers", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getAllPlanMemberByAdministrator(@PathVariable("id") Long id, @RequestHeader String Authorization) {
+        response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
-            if (adminId.isEmpty() || !adminId.equals(id)) {
+            if (adminId.isEmpty()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
+            if (!Long.valueOf(adminId.get()).equals(id)) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+
             Optional<List<PlanMember>> planMembers = administratorService.getPlanMemberByAdminId(id);
             if (planMembers.isEmpty()) {
                 notFoundResponse();
@@ -203,12 +214,19 @@ public class ProfileController {
 
     @GetMapping(path = "/administrators/{adminId}/planMembers/{planId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getPlanMemberById(@PathVariable("adminId") Long adminId, @PathVariable("planId") Long planId, @RequestHeader String Authorization) {
+        response = new Response();
         try {
             Optional<Integer> authAdminId = administratorService.authToken(Authorization);
-            if (authAdminId.isEmpty() || !authAdminId.equals(adminId)) {
+            if (authAdminId.isEmpty()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
+
+            if (!Long.valueOf(authAdminId.get()).equals(adminId)) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+
             Optional<PlanMember> planMember = administratorService.getPlanMemberById(planId);
             if (planMember.isEmpty()) {
                 notFoundResponse();
@@ -228,9 +246,15 @@ public class ProfileController {
 
     @GetMapping(path = "/administrators/{adminId}/condominiums", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getCondominiumsByAdmin(@PathVariable("adminId") Long adminId, @RequestHeader String Authorization) {
+        response = new Response();
         try {
             Optional<Integer> authAdminId = administratorService.authToken(Authorization);
-            if (authAdminId.isEmpty() || !authAdminId.equals(adminId)) {
+            if (authAdminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            LOGGER.info("adminId => " + String.valueOf(authAdminId.get()));
+            if (!Long.valueOf(authAdminId.get()).equals(adminId)) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
@@ -249,6 +273,7 @@ public class ProfileController {
 
     @GetMapping(path = "/condominiums/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getRulesByCondominium(@PathVariable("id") Long condominiumId, @RequestHeader String Authorization) {
+        response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
             Optional<Integer> residentId = residentService.authToken(Authorization);
@@ -271,6 +296,7 @@ public class ProfileController {
 
     @PostMapping(path = "/condominiums", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> postBuildinfByCondominium(@RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
+        response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
             if (adminId.isEmpty()) {
@@ -294,6 +320,7 @@ public class ProfileController {
 
     @PutMapping(path = "/condominiums/{condominiumId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> updateDepartmentsByBuilding(@RequestParam("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
+        response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
             if (adminId.isEmpty()) {
@@ -324,6 +351,7 @@ public class ProfileController {
 
     @DeleteMapping(path = "/condominiums/{condominiumId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> deleteDepartmentsByCondominium(@RequestParam("condominiumId") Long condominiumId, @RequestHeader String Authorization) {
+        response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
             if (adminId.isEmpty()) {
@@ -350,6 +378,7 @@ public class ProfileController {
 
     @PostMapping(path = "/administrators", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> createAdministrator(@RequestBody RequestUser requestUser) {
+        response = new Response();
         try {
             User user = new User();
             user.setEmail(requestUser.getEmail());
@@ -377,6 +406,7 @@ public class ProfileController {
 
     @PostMapping(path = "/residents", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> createResident(@RequestBody RequestUser requestUser) {
+        response = new Response();
         try {
             User user = new User();
             user.setEmail(requestUser.getEmail());
