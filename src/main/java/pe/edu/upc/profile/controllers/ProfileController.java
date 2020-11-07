@@ -57,6 +57,7 @@ public class ProfileController {
 
     public void okResponse(Object result) {
         response.setStatus(HttpStatus.OK.value());
+        response.setMessage("SERVICE SUCCESS");
         response.setResult(result);
         status = HttpStatus.OK;
     }
@@ -374,7 +375,7 @@ public class ProfileController {
         }
     }
 
-    @PostMapping(path = "/residents}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = "/residents", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> createResident(@RequestBody RequestUser requestUser) {
         try {
             User user = new User();
