@@ -9,6 +9,7 @@ import pe.edu.upc.profile.entities.*;
 import pe.edu.upc.profile.models.*;
 import pe.edu.upc.profile.services.*;
 
+import javax.websocket.server.PathParam;
 import javax.print.attribute.standard.Media;
 import javax.swing.text.html.Option;
 import java.util.List;
@@ -133,7 +134,7 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/residents/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> geResidentProfile(@PathVariable("id") Long id, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> geResidentProfile(@PathParam("id") Long id, @RequestHeader String Authorization) {
         response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
@@ -160,7 +161,7 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/administrators/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getAdministratorProfile(@PathVariable("id") Long id, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getAdministratorProfile(@PathParam("id") Long id, @RequestHeader String Authorization) {
         response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
@@ -186,7 +187,7 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/administrators/{id}/planMembers", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getAllPlanMemberByAdministrator(@PathVariable("id") Long id, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getAllPlanMemberByAdministrator(@PathParam("id") Long id, @RequestHeader String Authorization) {
         response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
@@ -213,7 +214,7 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/administrators/{adminId}/planMembers/{planId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getPlanMemberById(@PathVariable("adminId") Long adminId, @PathVariable("planId") Long planId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getPlanMemberById(@PathParam("adminId") Long adminId, @PathParam("planId") Long planId, @RequestHeader String Authorization) {
         response = new Response();
         try {
             Optional<Integer> authAdminId = administratorService.authToken(Authorization);
@@ -245,7 +246,7 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/administrators/{adminId}/condominiums", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getCondominiumsByAdmin(@PathVariable("adminId") Long adminId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getCondominiumsByAdmin(@PathParam("adminId") Long adminId, @RequestHeader String Authorization) {
         response = new Response();
         try {
             Optional<Integer> authAdminId = administratorService.authToken(Authorization);
@@ -272,7 +273,7 @@ public class ProfileController {
     }
 
     @GetMapping(path = "/condominiums/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getRulesByCondominium(@PathVariable("id") Long condominiumId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getRulesByCondominium(@PathParam("id") Long condominiumId, @RequestHeader String Authorization) {
         response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
@@ -319,7 +320,7 @@ public class ProfileController {
     }
 
     @PutMapping(path = "/condominiums/{condominiumId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> updateDepartmentsByBuilding(@RequestParam("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
+    public ResponseEntity<Response> updateDepartmentsByBuilding(@PathParam("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
         response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
@@ -350,7 +351,7 @@ public class ProfileController {
     }
 
     @DeleteMapping(path = "/condominiums/{condominiumId}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> deleteDepartmentsByCondominium(@RequestParam("condominiumId") Long condominiumId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> deleteDepartmentsByCondominium(@PathParam("condominiumId") Long condominiumId, @RequestHeader String Authorization) {
         response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
