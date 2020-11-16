@@ -431,7 +431,7 @@ public class ProfileController {
     // TERMINA CONDOMINIOS
 
     // EMPIZA CRUD REGLAS DE CONDOMINIO
-    @GetMapping(path = "/condominiums/{condominiumId}/condominumrules", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(path = "/condominiums/{condominiumId}/condominiumrules", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getRulesByCondominium(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization) {
         response = new Response();
         try {
@@ -450,7 +450,7 @@ public class ProfileController {
         }
     }
 
-    @PostMapping(path = "/condominiums/{condominiumId}/condominumrules", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(path = "/condominiums/{condominiumId}/condominiumrules", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> addCondominiumRule(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominiumRule requestCondominiumRule) {
         response = new Response();
         try {
@@ -472,7 +472,7 @@ public class ProfileController {
         }
     }
 
-    @PutMapping(path = "/condominiums/{condominiumId}/condominumrules/{condominiumRuleId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(path = "/condominiums/{condominiumId}/condominiumrules/{condominiumRuleId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> updateCondominiumRule(@PathVariable("condominiumId") Long condominiumId, @PathVariable("condominiumRuleId") Long condominiumRuleId, @RequestHeader String Authorization, @RequestBody RequestCondominiumRule requestCondominiumRule) {
         response = new Response();
         try {
@@ -497,7 +497,7 @@ public class ProfileController {
         }
     }
 
-    @DeleteMapping(path = "/condominiums/{condominiumId}/condominumrules/{condominiumRuleId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @DeleteMapping(path = "/condominiums/{condominiumId}/condominiumrules/{condominiumRuleId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> deleteCondominiumRule(@PathVariable("condominiumId") Long condominiumId, @PathVariable("condominiumRuleId") Long condominiumRuleId, @RequestHeader String Authorization) {
         response = new Response();
         try {
