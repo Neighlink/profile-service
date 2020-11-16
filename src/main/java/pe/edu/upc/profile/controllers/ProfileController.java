@@ -581,22 +581,24 @@ public class ProfileController {
 
     // EMPIEZA CRUD DE RESIDENTES DE CONDOMINIO
     @GetMapping(path = "/residentdepartments", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getResidentsByCondominium(@PathParam("condominiumId") Optional<Long> condominiumId, @PathParam("departmentId") Optional<Long> departmentId, @RequestHeader String Authorization) {
+    public ResponseEntity<Response> getResidentsByCondominium(@PathParam("condominiumId") Long condominiumId, @PathParam("departmentId") Long departmentId, @RequestHeader String Authorization) {
         response = new Response();
         try {
+            LOGGER.info("data => " + condominiumId + " - - " + departmentId);
             Optional<Integer> adminId = administratorService.authToken(Authorization);
             if (adminId.isEmpty()) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
-            if (condominiumId.isEmpty() && departmentId.isEmpty()) {
-                conflictResponse("filtro necesario");
+
+            if (condominiumId == null && departmentId == null) {
+                conflictResponse("filtro necesario de condominiumId o departmentId");
             } else {
                 List<ResidentDepartment> residentDepartments;
-                if (condominiumId.isEmpty()) {
-                    residentDepartments = residentDepartmentService.findAllByDepartment(departmentId.get());
+                if (condominiumId != null) {
+                    residentDepartments = residentDepartmentService.findAllByCondominium(condominiumId);
                 } else {
-                    residentDepartments = residentDepartmentService.findAllByCondominium(condominiumId.get());
+                    residentDepartments = residentDepartmentService.findAllByDepartment(departmentId);
                 }
                 okResponse(residentDepartments);
             }
