@@ -1,8 +1,11 @@
 package pe.edu.upc.profile.entities;
 
+import lombok.Data;
+
 import javax.persistence.*;
 
 @Entity
+@Data
 @Table(name = "resident_department")
 public class ResidentDepartment {
     @Id
@@ -10,7 +13,7 @@ public class ResidentDepartment {
     @Column(name = "id")
     private Long id;
     @Column(nullable = false)
-    private Long deparmentId;
+    private Long departmentId;
     @Column(nullable = false)
     private Long condominiumId;
     @Column(nullable = false)

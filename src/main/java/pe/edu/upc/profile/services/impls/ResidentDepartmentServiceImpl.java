@@ -49,4 +49,14 @@ public class ResidentDepartmentServiceImpl implements ResidentDepartmentService 
     public void deleteAllByCondominiumId(Long condominiumId) {
         residentDepartmentRepository.deleteAllByCondominiumId(condominiumId);
     }
+
+    @Override
+    public List<ResidentDepartment> findAllByDepartment(Long departmentId) {
+        return residentDepartmentRepository.findAllByDepartment(departmentId);
+    }
+
+    @Override
+    public List<ResidentDepartment> findAllByCondominium(Long condominiumId) {
+        return residentDepartmentRepository.findAllByCondominium(condominiumId);
+    }
 }

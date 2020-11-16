@@ -4,13 +4,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import pe.edu.upc.profile.entities.CondominiuRule;
+import pe.edu.upc.profile.entities.CondominiumRule;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
-public interface CondominiumRuleRepository extends JpaRepository<CondominiuRule, Long> {
-    @Query("SELECT c FROM CondominiuRule c WHERE c.condominiumId = :condominiumId")
-    Optional<List<CondominiuRule>> getRulesByCondominium(@Param("condominiumId") Long condominiumId);
+public interface CondominiumRuleRepository extends JpaRepository<CondominiumRule, Long> {
+    @Query("SELECT c FROM CondominiumRule c WHERE c.condominiumId = :condominiumId")
+    List<CondominiumRule> getRulesByCondominium(@Param("condominiumId") Long condominiumId);
 }

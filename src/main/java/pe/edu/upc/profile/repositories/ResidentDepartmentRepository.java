@@ -11,6 +11,10 @@ import java.util.Optional;
 public interface ResidentDepartmentRepository extends JpaRepository<ResidentDepartment, Long> {
     @Query("SELECT r FROM ResidentDepartment r WHERE r.residentId = :residentId")
     Optional<List<ResidentDepartment>> findAllByResidentId(@Param("residentId") Long residentId);
+    @Query("SELECT r FROM ResidentDepartment r WHERE r.condominiumId = :condominiumId")
+    List<ResidentDepartment> findAllByCondominium(@Param("condominiumId") Long condominiumId);
+    @Query("SELECT r FROM ResidentDepartment r WHERE r.departmentId = :departmentId")
+    List<ResidentDepartment> findAllByDepartment(@Param("departmentId") Long departmentId);
     @Query("UPDATE ResidentDepartment r SET r.isDelete = true WHERE r.condominiumId = :condominiumId")
     void deleteAllByCondominiumId(@Param("condominiumId") Long condominiumId);
 }

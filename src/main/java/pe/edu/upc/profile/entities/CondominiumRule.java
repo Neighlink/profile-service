@@ -7,7 +7,7 @@ import javax.persistence.*;
 @Entity
 @Table(name="condominiumRules")
 @Data
-public class CondominiuRule {
+public class CondominiumRule {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

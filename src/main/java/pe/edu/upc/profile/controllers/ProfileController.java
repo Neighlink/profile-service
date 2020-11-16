@@ -1,5 +1,7 @@
 package pe.edu.upc.profile.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.codehaus.jettison.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -9,19 +11,19 @@ import pe.edu.upc.profile.entities.*;
 import pe.edu.upc.profile.models.*;
 import pe.edu.upc.profile.services.*;
 
-import javax.print.attribute.standard.Media;
-import javax.swing.text.html.Option;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.logging.Level;
+import javax.websocket.server.PathParam;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.*;
 import java.util.logging.Logger;
 
 @RestController
 @RequestMapping("/profiles")
 public class ProfileController {
 
-    // TODO: Implementar los servicios de registro tanto admin como residnete integrar UUID para el token de usuario
+    private final static String URL_PROFILE = "http://localhost:8091/configurations";
 
     ProfileController() {
         response = new Response();
@@ -37,7 +39,41 @@ public class ProfileController {
     private ResidentDepartmentService residentDepartmentService;
     @Autowired
     private UserService userService;
+    @Autowired
+    private CondominiumRuleService condominiumRuleService;
 
+    private ResponseDepartment getDepartmentByCode(String token, String code) {
+        try {
+            var values = new HashMap<String, String>();
+            values.put("code", code);
+            var objectMapper = new ObjectMapper();
+            String requestBody = objectMapper.writeValueAsString(values);
+            String url = URL_PROFILE + "/departments";
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                    .setHeader("Authorization", token)
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            JSONObject responseAPI = new JSONObject(response.body());
+            var status = responseAPI.getInt("status");
+            if (status != 200) {
+                ResponseDepartment department = new ResponseDepartment();
+                department.setId(responseAPI.getLong("id"));
+                department.setBuildingId(responseAPI.getLong("buildingId"));
+                department.setLimiteRegister(responseAPI.getInt("limiteRegister"));
+                department.setName(responseAPI.getString("name"));
+                department.setSecretCode(responseAPI.getString("secretCode"));
+                return department;
+            } else {
+                return null;
+            }
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     private final static Logger LOGGER = Logger.getLogger("bitacora.subnivel.Control");
     Response response = new Response();
@@ -62,11 +98,18 @@ public class ProfileController {
         status = HttpStatus.OK;
     }
 
+    public void conflictResponse(String message) {
+        response.setStatus(HttpStatus.CONFLICT.value());
+        response.setMessage(message);
+        status = HttpStatus.CONFLICT;
+    }
+
     public void internalServerErrorResponse(String message) {
         response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
         response.setMessage(HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase() + " => " + message);
     }
 
+    // API PARA AUTORIZAR EN OTROS SERVICIOS
     @PostMapping(path = "/authToken", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> authToken(@RequestHeader String Authorization) {
         response = new Response();
@@ -97,7 +140,7 @@ public class ProfileController {
         }
     }
 
-
+    // START LOGIN
     @PostMapping(path = "/administrators/auth", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> authAdministrator(@RequestBody UserAuth auth) {
         response = new Response();
@@ -132,6 +175,36 @@ public class ProfileController {
         }
     }
 
+    @PostMapping(path = "/users/auth", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> login(@RequestBody UserAuth auth) {
+        response = new Response();
+        try {
+            Optional<Resident> resident = residentService.auth(auth.getEmail(), auth.getPassword());
+            Optional<Administrator> administrator = administratorService.auth(auth.getEmail(), auth.getPassword());
+            if (resident.isEmpty() && administrator.isEmpty()) {
+                notFoundResponse();
+            } else {
+                if (resident.isEmpty()) {
+                    ResponseAuthLogin response = new ResponseAuthLogin();
+                    response.setUser(administrator);
+                    response.setUserType("ADMINISTRADOR");
+                    okResponse(response);
+                } else {
+                    ResponseAuthLogin response = new ResponseAuthLogin();
+                    response.setUser(resident);
+                    response.setUserType("RESIDENTE");
+                    okResponse(response);
+                }
+            }
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+    // END LOGIN
+
+    // INFO RESIDENTE
     @GetMapping(path = "/residents/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> geResidentProfile(@PathVariable("id") Long id, @RequestHeader String Authorization) {
         response = new Response();
@@ -159,6 +232,7 @@ public class ProfileController {
         }
     }
 
+    // INFO ADMINISTRADOR
     @GetMapping(path = "/administrators/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getAdministratorProfile(@PathVariable("id") Long id, @RequestHeader String Authorization) {
         response = new Response();
@@ -185,6 +259,7 @@ public class ProfileController {
         }
     }
 
+    // INFO PLAN DE MEMBRESIA DE ADMINISTRADOR
     @GetMapping(path = "/administrators/{id}/planMembers", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getAllPlanMemberByAdministrator(@PathVariable("id") Long id, @RequestHeader String Authorization) {
         response = new Response();
@@ -212,6 +287,7 @@ public class ProfileController {
         }
     }
 
+    // INFO DEL PLAN
     @GetMapping(path = "/administrators/{adminId}/planMembers/{planId}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getPlanMemberById(@PathVariable("adminId") Long adminId, @PathVariable("planId") Long planId, @RequestHeader String Authorization) {
         response = new Response();
@@ -244,6 +320,7 @@ public class ProfileController {
         }
     }
 
+    // COMIENZA CONDOMINIOS
     @GetMapping(path = "/administrators/{adminId}/condominiums", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> getCondominiumsByAdmin(@PathVariable("adminId") Long adminId, @RequestHeader String Authorization) {
         response = new Response();
@@ -253,7 +330,6 @@ public class ProfileController {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
             }
-            LOGGER.info("adminId => " + String.valueOf(authAdminId.get()));
             if (!Long.valueOf(authAdminId.get()).equals(adminId)) {
                 unauthorizedResponse();
                 return new ResponseEntity<>(response, status);
@@ -263,29 +339,6 @@ public class ProfileController {
                 notFoundResponse();
             } else {
                 okResponse(condominiums.get());
-            }
-            return new ResponseEntity<>(response, status);
-        } catch (Exception e) {
-            internalServerErrorResponse(e.getMessage());
-            return new ResponseEntity<>(response, status);
-        }
-    }
-
-    @GetMapping(path = "/condominiums/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> getRulesByCondominium(@PathVariable("id") Long condominiumId, @RequestHeader String Authorization) {
-        response = new Response();
-        try {
-            Optional<Integer> adminId = administratorService.authToken(Authorization);
-            Optional<Integer> residentId = residentService.authToken(Authorization);
-            if (adminId.isEmpty() && residentId.isEmpty()) {
-                unauthorizedResponse();
-                return new ResponseEntity<>(response, status);
-            }
-            Optional<List<CondominiuRule>> condominiumRules = condominiumService.getRulesByCondominium(condominiumId);
-            if (condominiumRules.isEmpty()) {
-                notFoundResponse();
-            } else {
-                okResponse(condominiumRules.get());
             }
             return new ResponseEntity<>(response, status);
         } catch (Exception e) {
@@ -319,7 +372,7 @@ public class ProfileController {
     }
 
     @PutMapping(path = "/condominiums/{condominiumId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Response> updateDepartmentsByBuilding(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
+    public ResponseEntity<Response> updateCondominium(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominium requestCondominium) {
         response = new Response();
         try {
             Optional<Integer> adminId = administratorService.authToken(Authorization);
@@ -375,7 +428,101 @@ public class ProfileController {
             return new ResponseEntity<>(response, status);
         }
     }
+    // TERMINA CONDOMINIOS
 
+    // EMPIZA CRUD REGLAS DE CONDOMINIO
+    @GetMapping(path = "/condominiums/{condominiumId}/condominumrules", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> getRulesByCondominium(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization) {
+        response = new Response();
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            Optional<Integer> residentId = residentService.authToken(Authorization);
+            if (adminId.isEmpty() && residentId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            List<CondominiumRule> condominiumRules = condominiumRuleService.findAllByCoddominium(condominiumId);
+            okResponse(condominiumRules);
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PostMapping(path = "/condominiums/{condominiumId}/condominumrules", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> addCondominiumRule(@PathVariable("condominiumId") Long condominiumId, @RequestHeader String Authorization, @RequestBody RequestCondominiumRule requestCondominiumRule) {
+        response = new Response();
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            if (adminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            CondominiumRule condominiumRule = new CondominiumRule();
+            condominiumRule.setName(requestCondominiumRule.getNamme());
+            condominiumRule.setDescription(requestCondominiumRule.getDescription());
+            condominiumRule.setCondominiumId(condominiumId);
+            CondominiumRule condominiumRuleSaved = condominiumRuleService.save(condominiumRule);
+            okResponse(condominiumRuleSaved);
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PutMapping(path = "/condominiums/{condominiumId}/condominumrules/{condominiumRuleId}", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> updateCondominiumRule(@PathVariable("condominiumId") Long condominiumId, @PathVariable("condominiumRuleId") Long condominiumRuleId, @RequestHeader String Authorization, @RequestBody RequestCondominiumRule requestCondominiumRule) {
+        response = new Response();
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            if (adminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            Optional<CondominiumRule> condominiumRule = condominiumRuleService.findById(condominiumRuleId);
+            if (condominiumRule.isEmpty()) {
+                notFoundResponse();
+            } else {
+                condominiumRule.get().setName(requestCondominiumRule.getNamme());
+                condominiumRule.get().setDescription(requestCondominiumRule.getDescription());
+                CondominiumRule condominiumRuleSaved = condominiumRuleService.save(condominiumRule.get());
+                okResponse(condominiumRuleSaved);
+            }
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @DeleteMapping(path = "/condominiums/{condominiumId}/condominumrules/{condominiumRuleId}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> deleteCondominiumRule(@PathVariable("condominiumId") Long condominiumId, @PathVariable("condominiumRuleId") Long condominiumRuleId, @RequestHeader String Authorization) {
+        response = new Response();
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            Optional<Integer> residentId = residentService.authToken(Authorization);
+            if (adminId.isEmpty() && residentId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            Optional<CondominiumRule> condominiumRule = condominiumRuleService.findById(condominiumRuleId);
+            if (condominiumRule.isEmpty()) {
+                notFoundResponse();
+            } else {
+                condominiumRuleService.deleteById(condominiumRuleId);
+                okResponse(null);
+            }
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+    // TERMINA CRUD REGLAS DE CONDOMINIO
+
+    // EMPIEZA REGISTRAR USUARIO ADMIN Y RESIDENTE
     @PostMapping(path = "/administrators", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Response> createAdministrator(@RequestBody RequestUser requestUser) {
         response = new Response();
@@ -430,5 +577,80 @@ public class ProfileController {
             return new ResponseEntity<>(response, status);
         }
     }
+    // TERMINA REGISTRAR USUARIO ADMIN Y RESIDENTE
 
+    // EMPIEZA CRUD DE RESIDENTES DE CONDOMINIO
+    @GetMapping(path = "/residentdepartments", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> getResidentsByCondominium(@PathParam("condominiumId") Optional<Long> condominiumId, @PathParam("departmentId") Optional<Long> departmentId, @RequestHeader String Authorization) {
+        response = new Response();
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            if (adminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            if (condominiumId.isEmpty() && departmentId.isEmpty()) {
+                conflictResponse("filtro necesario");
+            } else {
+                List<ResidentDepartment> residentDepartments;
+                if (condominiumId.isEmpty()) {
+                    residentDepartments = residentDepartmentService.findAllByDepartment(departmentId.get());
+                } else {
+                    residentDepartments = residentDepartmentService.findAllByCondominium(condominiumId.get());
+                }
+                okResponse(residentDepartments);
+            }
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @PostMapping(path = "/residentdepartments", produces = MediaType.APPLICATION_JSON_VALUE, consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> addResidentDepartment(@RequestHeader String Authorization, @RequestBody RequestResidentdepartment requestResidentdepartment) {
+        response = new Response();
+        try {
+            Optional<Integer> resident = residentService.authToken(Authorization);
+            if (resident.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            ResponseDepartment responseDepartment = getDepartmentByCode(Authorization, requestResidentdepartment.getCode());
+            if (responseDepartment == null) {
+                notFoundResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            ResidentDepartment residentDepartment = new ResidentDepartment();
+            residentDepartment.setDepartmentId(responseDepartment.getId());
+            residentDepartment.setBuildingId(responseDepartment.getBuildingId());
+            residentDepartment.setCondominiumId(responseDepartment.getCondominiumId());
+            residentDepartment.setDelete(false);
+            residentDepartment.setResidentId(Long.valueOf(resident.get()));
+            okResponse(null);
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+
+    @DeleteMapping(path = "/residentdepartments/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Response> deleteResidentDepartment(@PathVariable("id") Long id, @RequestHeader String Authorization) {
+        response = new Response();
+        try {
+            Optional<Integer> adminId = administratorService.authToken(Authorization);
+            if (adminId.isEmpty()) {
+                unauthorizedResponse();
+                return new ResponseEntity<>(response, status);
+            }
+            residentDepartmentService.deleteById(id);
+            okResponse(null);
+            return new ResponseEntity<>(response, status);
+        } catch (Exception e) {
+            internalServerErrorResponse(e.getMessage());
+            return new ResponseEntity<>(response, status);
+        }
+    }
+    // TERMINAL CRUD DE RESIDENTES DE CONDOMINIO
 }
