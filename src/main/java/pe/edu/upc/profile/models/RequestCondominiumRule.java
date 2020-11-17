@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class RequestCondominiumRule {
-    private String namme;
+    private String name;
     private String description;
 }

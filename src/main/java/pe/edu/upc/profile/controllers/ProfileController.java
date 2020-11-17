@@ -460,7 +460,7 @@ public class ProfileController {
                 return new ResponseEntity<>(response, status);
             }
             CondominiumRule condominiumRule = new CondominiumRule();
-            condominiumRule.setName(requestCondominiumRule.getNamme());
+            condominiumRule.setName(requestCondominiumRule.getName());
             condominiumRule.setDescription(requestCondominiumRule.getDescription());
             condominiumRule.setCondominiumId(condominiumId);
             CondominiumRule condominiumRuleSaved = condominiumRuleService.save(condominiumRule);
@@ -485,7 +485,7 @@ public class ProfileController {
             if (condominiumRule.isEmpty()) {
                 notFoundResponse();
             } else {
-                condominiumRule.get().setName(requestCondominiumRule.getNamme());
+                condominiumRule.get().setName(requestCondominiumRule.getName());
                 condominiumRule.get().setDescription(requestCondominiumRule.getDescription());
                 CondominiumRule condominiumRuleSaved = condominiumRuleService.save(condominiumRule.get());
                 okResponse(condominiumRuleSaved);
