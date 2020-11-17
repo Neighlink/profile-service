@@ -11,6 +11,6 @@ import java.util.Optional;
 
 @Repository
 public interface CondominiumRepository extends JpaRepository<Condominium, Long> {
-    @Query("SELECT c FROM Condominium c WHERE c.AdministratorId = :adminId")
+    @Query("SELECT c FROM Condominium c WHERE c.AdministratorId = :adminId AND c.isDelete = false")
     Optional<List<Condominium>> getCondominiumsByAdmin(@Param("adminId") Long adminId);
 }
